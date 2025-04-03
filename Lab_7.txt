@@ -1,0 +1,70 @@
+
+# Lab 7a
+# S3 configuration for state
+
+terraform {
+  backend "s3" {
+    bucket         = "terraform-state-lj64415"
+    key            = "terraform/state.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-lock"
+  }
+}
+
+
+
+# Instance creation
+
+resource "aws_instance" "example" {
+  ami           = "ami-00a929b66ed6e0de6"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "Terraform-Test-Instance"
+  }
+}
+
+
+
+# Lab 7b
+# Creating instances using count
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "web" {
+  count = 3  # Creates 3 instances
+
+  ami           = "ami-00a929b66ed6e0de6"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "Terraform-Instance-${count.index}"
+  }
+}
+
+
+
+# creating iustances using for_each 
+
+variable "instances" {
+  type = map
+  default = {
+    "web1" = "t2.micro"
+    "web2" = "t3.micro"
+    "web3" = "t2.small"
+  }
+}
+
+resource "aws_instance" "web" {
+  for_each = var.instances
+
+  ami           = "ami-00a929b66ed6e0de6"
+  instance_type = each.value
+
+  tags = {
+    Name = "${each.key}"
+  }
+}
+
